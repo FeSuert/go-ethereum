@@ -18,6 +18,7 @@ package vm
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"sync/atomic"
 
@@ -188,6 +189,14 @@ func (evm *EVM) Interpreter() *EVMInterpreter {
 // the necessary steps to create accounts and reverses the state in case of an
 // execution error or failed value transfer.
 func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *uint256.Int) (ret []byte, leftOverGas uint64, err error) {
+	// Debug print statements
+	fmt.Printf("EVM Call started\n")
+	fmt.Printf("Caller: %v\n", caller.Address().Hex())
+	fmt.Printf("Address: %v\n", addr.Hex())
+	fmt.Printf("Input: %x\n", input)
+	fmt.Printf("Gas: %d\n", gas)
+	fmt.Printf("Value: %v\n", value)
+
 	// Capture the tracer start/end events in debug mode
 	if evm.Config.Tracer != nil {
 		evm.captureBegin(evm.depth, CALL, caller.Address(), addr, input, gas, value.ToBig())
@@ -205,6 +214,9 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	}
 	snapshot := evm.StateDB.Snapshot()
 	p, isPrecompile := evm.precompile(addr)
+
+	// Debug print statement
+	fmt.Printf("Precompile check: %v, %v\n", p, isPrecompile)
 
 	if !evm.StateDB.Exist(addr) {
 		if !isPrecompile && evm.chainRules.IsEIP4762 {
@@ -255,10 +267,11 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 
 			gas = 0
 		}
-		// TODO: consider clearing up unused snapshots:
-		//} else {
-		//	evm.StateDB.DiscardSnapshot(snapshot)
 	}
+
+	// Debug print statement
+	fmt.Printf("EVM Call completed with ret: %x, leftOverGas: %d, err: %v\n", ret, gas, err)
+
 	return ret, gas, err
 }
 
